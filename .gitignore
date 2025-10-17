@@ -2,3 +2,8 @@
 *.txt
 venv/
 data/
+__pycache__/
+# 以下はVOICEVOX関連
+download.exe
+voicevox_core/
+*.wav

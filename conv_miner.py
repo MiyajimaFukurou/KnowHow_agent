@@ -2,6 +2,8 @@ import os, re, time
 from pathlib import Path
 from dotenv import load_dotenv
 from openai import OpenAI
+#import vox
+import voxcore
 
 load_dotenv()
 
@@ -106,6 +108,8 @@ def main():
             answer = generate_answer(question)
             print("\n=== 回答 ===\n")
             print(answer)
+            #vox.out(answer)     # 通常ボイボによる音声合成
+            voxcore.out(answer)  # ボイボcoreによる音声合成
 
 if __name__ == "__main__":
     main()
