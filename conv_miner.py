@@ -4,13 +4,14 @@ from dotenv import load_dotenv
 from openai import OpenAI
 #import vox
 import voxcore
+import chatlog
 
 load_dotenv()
 
 # ---- 設定もろもろ -------------------
 client = OpenAI(api_key=os.getenv("API_KEY"))
 DATA_DIR = Path("./data")                   # 会話ログ置き場
-MODEL    = ("gpt-5")
+MODEL    = ("gpt-5-nano")
 VS_ID    = os.getenv("VECTOR_STORE_ID")     # 既存ベクターストアがあれば使う
 FILE_ID  = os.getenv("FILE_ID")             # 既存ファイルがあれば使う
 # ------------------------------------
@@ -72,14 +73,22 @@ def VSatach(VS_ID: str | None = VS_ID, FILE_ID: str | None = FILE_ID):
             time.sleep(1)
 
 # --- ここから回答生成関数 ----------
-def generate_answer(question):
+def generate_answer(question, chatlog):
     prompt = f"""
 あなたは3Dプリンタ・レーザーカッター作業のヘルプエージェントです。
+ユーザは、与えられた過去の作業会話と同じ環境で作業しています。過去の会話記録を参考に、ユーザの状況を推測して回答してください。
 
-作業者からの質問：
+これは、過去のユーザとエージェントの会話記録です：
+{chatlog}
+
+これは、ユーザからの質問です：
 「{question}」
 
-この回答は音声で提示されます。それを念頭に、聞き取りできる程度の文量で回答してください。
+この質問に対して、与えられた過去の作業会話から類似ケースを探して、実践的なノウハウを提示してください。
+
+回答は音声合成して出力されます。聞き取れる程度の文量を意識し、要点のみを短く回答してください。
+前置き・箇条書き・補足・絵文字は禁止です。確信度が低い場合も簡潔に指示を1文で示すようにしてください。
+ただし、ユーザからの質問が、過去の会話記録と類似する場合（似た内容を繰り返し尋ねられている場合）は、より詳しく回答してください。
 """
     with open("prompt.txt", "w", encoding="utf-8") as f:
         f.write(prompt)
@@ -105,11 +114,12 @@ def main():
             print("質問が入力されていません。")
         else:
             print("回答を生成中です・・・")
-            answer = generate_answer(question)
+            answer = generate_answer(question, chatlog.last_n_chatlog(n=5))
             print("\n=== 回答 ===\n")
             print(answer)
             #vox.out(answer)     # 通常ボイボによる音声合成
-            voxcore.out(answer)  # ボイボcoreによる音声合成
+            #voxcore.out(answer)  # ボイボcoreによる音声合成
+            chatlog.log_save(question, answer, logfile="chat_log.jsonl")  # 会話ログ保存
 
 if __name__ == "__main__":
     main()

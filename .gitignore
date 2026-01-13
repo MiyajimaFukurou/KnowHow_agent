@@ -1,5 +1,6 @@
 .env
 *.txt
+*.jsonl
 venv/
 data/
 __pycache__/
